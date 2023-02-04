@@ -14,6 +14,11 @@
 
         .slowify-settings-field-label {
             font-weight: bolder;
+            margin-bottom: 0.5rem;
+        }
+
+        .slowify-settings-checkbox {
+            transform: scale(1.5);
         }
 
         .slowify-settings-submit {
@@ -49,6 +54,13 @@
             <label>
                 <div class="slowify-settings-field-label">Wait time (ms): </div>
                 <input type="number" id="waittime" name="waittime" />
+            </label>
+        </div>
+        <br>
+        <div class="slowify-settings-form-group">
+            <label>
+                <div class="slowify-settings-field-label">Transparent: </div>
+                <input type="checkbox" id="transparent-bg" name="transparent-bg" class="slowify-settings-checkbox" />
             </label>
         </div>
         <br>

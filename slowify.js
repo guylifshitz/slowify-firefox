@@ -23,8 +23,10 @@ function setup() {
   var div_progress = document.createElement("div");
   div_progress.style.background = "red";
   div_progress.style.width = "0%";
+  div_progress.style.left = "10rem";
+  div_progress.style.borderRadius = "50px";
   div_progress.innerHTML =
-    " --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- ";
+    " &nbsp ";
   div.appendChild(div_progress);
 
   document.body.appendChild(div);

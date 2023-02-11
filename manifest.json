@@ -6,7 +6,11 @@
   "icons": {
     "48": "timer-icon.png"
   },
-  "permissions": ["storage"],
+  "permissions": ["storage",  "tabs"],
+  "background": {
+    "scripts": ["background.js"],
+    "persistent": false
+  },
   "content_scripts": [
     {
       "matches": ["*://*/*"],

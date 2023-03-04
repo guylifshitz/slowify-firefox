@@ -1,131 +1,132 @@
-// todo change these to let, and move everythiung inside a class
-var slowify_timer = 0;
-var max_slowify_timer_ms = 5000;
-var slowify_transparentBG = false;
-var slowify_div;
-var slowify_progress_bar;
-var slowify_interval;
+// TODO make a class
 
-function add_div() {
-  if (slowify_div) {
-    return;
-  }
+let slowify_setting_max_timer_ms = 5000;
+let slowify_setting_transparentBG = false;
+const TIMER_CALL_FREQUENCY_MS = 500;
 
-  slowify_div = document.createElement("div");
-  slowify_div.id = "slowify-main";
-  slowify_div.style.position = "fixed";
-  slowify_div.style.top = "0";
-  slowify_div.style.left = "0";
-  slowify_div.style.width = "100%";
-  slowify_div.style.height = "100%";
-  slowify_div.style.zIndex = "1000";
-  if (slowify_transparentBG) {
-    slowify_div.style.background = "#000000DD";
-  } else {
-    slowify_div.style.background = "black";
-  }
-  slowify_div.style.color = "white";
-  slowify_div.style.fontSize = "10em";
-  slowify_div.style.paddingTop = "100px";
-  slowify_div.style.textAlign = "center";
-  slowify_div.innerHTML = "wait<br>&nbsp";
-  document.body.appendChild(slowify_div);
+let slowify_interval;
+let slowify_timer = 0;
 
-  slowify_progress_bar = document.createElement("div");
-  slowify_progress_bar.style.background = "red";
-  slowify_progress_bar.style.width = "0%";
-  slowify_progress_bar.style.left = "10rem";
-  slowify_progress_bar.style.borderRadius = "50px";
-  slowify_progress_bar.innerHTML = " &nbsp ";
-  slowify_div.appendChild(slowify_progress_bar);
+let slowify_element_main_div;
+let slowify_progress_bar_div;
 
-  handleEndOfTimer();
+browser.storage.sync.get("waittime").then(function (item) {
+  slowify_setting_max_timer_ms = parseInt(item.waittime);
+}, handleError);
+
+browser.storage.sync.get("transparentbg").then(function (item) {
+  slowify_setting_transparentBG = item.transparentbg;
+}, handleError);
+
+function handleError(error) {
+  console.log(`Slowify-error: ${error}`);
 }
 
-function handleEndOfTimer() {
-  if (slowify_timer <= 0) {
-    slowify_div.style.visibility = "hidden";
+chrome.runtime.onMessage.addListener(handleMessage);
 
-    chrome.runtime.sendMessage({ greeting: "GetURL" }, function (response) {
-      console.log("RESPPPs", response);
-    });
-
-    return;
-  } else {
-    slowify_div.style.visibility = "visible";
-  }
-}
-
-function updateUI() {
-  slowify_progress_bar.style.width =
-    Math.min(100 - (slowify_timer / max_slowify_timer_ms) * 100, 100) + "%";
-
-  slowify_div.innerHTML = "wait<br>" + Math.ceil(slowify_timer / 1000);
-  slowify_div.appendChild(slowify_progress_bar);
-}
-
-function setup_timer() {
-  if (!slowify_interval) {
-    slowify_interval = setInterval(myTimer, 500);
+function handleMessage(request, sender, sendResponse) {
+  switch (request.slowify_action) {
+    case "start_new_progress_bar":
+      reset_timer();
+      setup();
+      updateUI();
+    case "ping_presence":
+      setup();
+      updateUI();
+      break;
+    case "destroy_timer":
+      destroyTimer();
+      break;
   }
 }
 
 function reset_timer() {
-  slowify_timer = max_slowify_timer_ms;
+  slowify_timer = slowify_setting_max_timer_ms;
 }
 
-function myTimer() {
-  console.log("TIMER");
-  slowify_timer = slowify_timer - 500;
-  updateUI();
-  handleEndOfTimer();
-}
-
-function myStopFunction() {
-  console.log("myStopFunction1");
+function destroyTimer() {
   if (slowify_interval) {
-    console.log("myStopFunction2");
     clearInterval(slowify_interval);
     slowify_interval = null;
   }
 }
 
-chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
-  console.log("request", request);
-  if (request.cancel_timer) {
-    myStopFunction();
-    return;
-  } else if (request.only_timer) {
-    add_div();
-    setup_timer();
-    return;
-  } else {
-    add_div();
-    setup_timer();
-    reset_timer();
-    updateUI();
+function setup() {
+  create_timer();
+  create_html_elements();
+}
+
+function onTimerEvent() {
+  slowify_timer = slowify_timer - TIMER_CALL_FREQUENCY_MS;
+  if (slowify_timer < 0) {
+    ping_background_script();
   }
-  var response = "HI! from the CS.";
-  sendResponse(response);
-});
-
-function getSettingValueError(error) {
-  console.log(`Slowify-error: ${error}`);
+  updateUI();
 }
 
-function onGotSettingValueWaittime(item) {
-  max_slowify_timer_ms = parseInt(item.waittime);
+function create_timer() {
+  if (!slowify_interval) {
+    slowify_interval = setInterval(onTimerEvent, TIMER_CALL_FREQUENCY_MS);
+  }
 }
 
-function onGotSettingValueTransparentBG(item) {
-  slowify_transparentBG = item.transparentbg;
+function ping_background_script() {
+  chrome.runtime.sendMessage({ greeting: "GetURL" }, function (response) {});
 }
 
-const getSettingTransparentBG = browser.storage.sync.get("transparentbg");
-getSettingTransparentBG.then(
-  onGotSettingValueTransparentBG,
-  getSettingValueError
-);
+function create_html_elements() {
+  if (slowify_element_main_div) {
+    return;
+  }
 
-const getSettingValueWaittime = browser.storage.sync.get("waittime");
-getSettingValueWaittime.then(onGotSettingValueWaittime, getSettingValueError);
+  slowify_element_main_div = document.createElement("div");
+  slowify_element_main_div.id = "slowify-main";
+
+  let slowify_background = slowify_setting_transparentBG
+    ? "#000000DD"
+    : "black";
+
+  slowify_element_main_div.style.cssText = `
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 1000;
+  color: white;
+  font-size: 10em;
+  padding-top: 100px;
+  text-align: center;
+  background: ${slowify_background};
+  `;
+
+  slowify_element_main_div.innerHTML = "wait<br>&nbsp";
+  document.body.appendChild(slowify_element_main_div);
+
+  slowify_progress_bar_div = document.createElement("div");
+  slowify_progress_bar_div.style.cssText = `
+  background: red; 
+  width: 0%;
+  left: 10rem;
+  border-radius: 50px;
+  `;
+
+  slowify_progress_bar_div.innerHTML = " &nbsp ";
+  slowify_element_main_div.appendChild(slowify_progress_bar_div);
+}
+
+function updateUI() {
+  if (slowify_timer <= 0) {
+    slowify_element_main_div.style.visibility = "hidden";
+  } else {
+    slowify_element_main_div.style.visibility = "visible";
+  }
+
+  slowify_progress_bar_div.style.width =
+    Math.min(100 - (slowify_timer / slowify_setting_max_timer_ms) * 100, 100) +
+    "%";
+
+  slowify_element_main_div.innerHTML =
+    "wait<br>" + Math.ceil(slowify_timer / 1000);
+  slowify_element_main_div.appendChild(slowify_progress_bar_div);
+}

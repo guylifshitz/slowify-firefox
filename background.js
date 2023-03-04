@@ -1,6 +1,7 @@
 /*
   TODO: figure out how to update list of URLs on change in the settings panel
   TODO: add error on bad URL format
+  TODO: make a timeout setting
 */
 
 let url_patterns = [];
@@ -40,8 +41,7 @@ function handleTabUpdated(tabId, changeInfo, tabInfo) {
   if (tabInfo.status === "complete") startProgressBar(tabId);
 }
 
-function handleTabActivated() {
-  console.log("handleTabActivated");
+function handleTabActivated(activeInfo) {
   cancelTimers(activeInfo.previousTabId);
 
   browser.tabs
@@ -55,19 +55,21 @@ function handleTabActivated() {
   }
 }
 
-function handleWindowFocusChanged() {
+function handleWindowFocusChanged(windowId) {
   isWindowFocused = !(windowId === -1);
 
-  browser.windows.get(windowId).then(function (x) {
-    function queryResult(tabs) {
-      if (tabs.length > 0) {
-        startProgressBar(tabs[0].id);
+  if (isWindowFocused) {
+    browser.windows.get(windowId).then(function (x) {
+      function queryResult(tabs) {
+        if (tabs.length > 0) {
+          startProgressBar(tabs[0].id);
+        }
       }
-    }
-    browser.tabs
-      .query({ active: true, url: url_patterns })
-      .then(queryResult, handleError);
-  });
+      browser.tabs
+        .query({ active: true, url: url_patterns })
+        .then(queryResult, handleError);
+    });
+  }
 }
 
 // TODO make this blocking
@@ -78,11 +80,9 @@ function handleContentScriptPingMessage(request, sender, sendResponse) {
 }
 
 function startProgressBar(tabId) {
-  let data = { only_timer: false, cancel_timers: false };
-  if (timeSinceLastDistraction() < TIMEOUT_TIME_SEC * 1000) {
-    data = { only_timer: true, cancel_timers: false };
-  }
-
+  let show_distraction = timeSinceLastDistraction() > TIMEOUT_TIME_SEC * 1000;
+  let action = show_distraction ? "start_new_progress_bar" : "ping_presence";
+  let data = { slowify_action: action };
   browser.tabs.sendMessage(tabId, data, function () {});
 }
 
@@ -91,6 +91,13 @@ function timeSinceLastDistraction() {
 }
 
 function cancelTimers(tabId) {
-  let data = { cancel_timer: true };
+  let data = { slowify_action: "destroy_timer" };
   browser.tabs.sendMessage(tabId, data, function () {});
 }
+
+setInterval(function () {
+  console.log(
+    "Slowify time since last distraction: ",
+    (timeSinceLastDistraction() / 1000).toFixed()
+  );
+}, 1000);

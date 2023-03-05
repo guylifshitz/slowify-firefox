@@ -1,7 +1,6 @@
 /*
   TODO: figure out how to update list of URLs on change in the settings panel
   TODO: add error on bad URL format
-  TODO: make a timeout time setting
   TODO: make sure there are no concurrency problems
         caused by query that returns after a message from a tab ping 
 */
@@ -47,7 +46,7 @@ function handleTabUpdated(tabId, changeInfo, tabInfo) {
 }
 
 function handleTabActivated(activeInfo) {
-  cancelTimer(activeInfo.previousTabId);
+  if (activeInfo.previousTabId) cancelTimer(activeInfo.previousTabId);
 
   isTabFocused = false;
 

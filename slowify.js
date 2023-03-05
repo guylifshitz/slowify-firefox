@@ -12,7 +12,7 @@ let slowify_element_main_div;
 let slowify_progress_bar_div;
 
 browser.storage.sync.get("waittime").then(function (item) {
-  slowify_setting_max_timer_ms = parseInt(item.waittime);
+  slowify_setting_max_timer_ms = parseInt(parseFloat(item.waittime) * 1000);
 }, handleError);
 
 browser.storage.sync.get("transparentbg").then(function (item) {

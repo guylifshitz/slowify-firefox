@@ -9,9 +9,12 @@
 let url_patterns = [];
 let time_of_last_distraction = 0;
 let isTabFocused;
-const TIMEOUT_TIME_SEC = 60;
+let timeout_time_ms = 10 * 60 * 1000;
 
 browser.storage.sync.get("urls").then(onSettingGotURLs, handleError);
+browser.storage.sync.get("timeouttime").then(function (item) {
+  timeout_time_ms = parseInt(parseFloat(item.timeouttime) * 1000);
+}, handleError);
 
 function handleError(error) {
   console.log(`Slowify-error: ${error}`);
@@ -85,7 +88,7 @@ function handleContentScriptPingMessage(request, sender, sendResponse) {
 }
 
 function startProgressBar(tabId) {
-  let show_distraction = timeSinceLastDistraction() > TIMEOUT_TIME_SEC * 1000;
+  let show_distraction = timeSinceLastDistraction() > timeout_time_ms;
   let action = show_distraction ? "start_new_progress_bar" : "ping_presence";
   let data = { slowify_action: action };
   browser.tabs.sendMessage(tabId, data, function () {});

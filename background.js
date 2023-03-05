@@ -1,12 +1,14 @@
 /*
   TODO: figure out how to update list of URLs on change in the settings panel
   TODO: add error on bad URL format
-  TODO: make a timeout setting
+  TODO: make a timeout time setting
+  TODO: make sure there are no concurrency problems
+        caused by query that returns after a message from a tab ping 
 */
 
 let url_patterns = [];
 let time_of_last_distraction = 0;
-let isWindowFocused;
+let isTabFocused;
 const TIMEOUT_TIME_SEC = 60;
 
 browser.storage.sync.get("urls").then(onSettingGotURLs, handleError);
@@ -42,13 +44,16 @@ function handleTabUpdated(tabId, changeInfo, tabInfo) {
 }
 
 function handleTabActivated(activeInfo) {
-  cancelTimers(activeInfo.previousTabId);
+  cancelTimer(activeInfo.previousTabId);
+
+  isTabFocused = false;
 
   browser.tabs
     .query({ active: true, url: url_patterns })
     .then(onQueryFinished, handleError);
 
   function onQueryFinished(tabs) {
+    isTabFocused = true;
     if (tabs.length > 0 && activeInfo.tabId === tabs[0].id) {
       startProgressBar(tabs[0].id);
     }
@@ -56,11 +61,10 @@ function handleTabActivated(activeInfo) {
 }
 
 function handleWindowFocusChanged(windowId) {
-  isWindowFocused = !(windowId === -1);
-
-  if (isWindowFocused) {
+  if (!(windowId === -1)) {
     browser.windows.get(windowId).then(function (x) {
       function queryResult(tabs) {
+        isTabFocused = true;
         if (tabs.length > 0) {
           startProgressBar(tabs[0].id);
         }
@@ -69,12 +73,13 @@ function handleWindowFocusChanged(windowId) {
         .query({ active: true, url: url_patterns })
         .then(queryResult, handleError);
     });
+  } else {
+    isTabFocused = false;
   }
 }
 
-// TODO make this blocking
 function handleContentScriptPingMessage(request, sender, sendResponse) {
-  if (sender.tab.active && isWindowFocused) {
+  if (sender.tab.active && isTabFocused) {
     time_of_last_distraction = Date.now();
   }
 }
@@ -90,7 +95,7 @@ function timeSinceLastDistraction() {
   return Date.now() - time_of_last_distraction;
 }
 
-function cancelTimers(tabId) {
+function cancelTimer(tabId) {
   let data = { slowify_action: "destroy_timer" };
   browser.tabs.sendMessage(tabId, data, function () {});
 }

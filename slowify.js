@@ -1,4 +1,5 @@
 // TODO make a class
+// TODO use animation
 
 let slowify_setting_max_timer_ms = 5000;
 let slowify_setting_transparentBG = false;
@@ -30,7 +31,9 @@ function handleMessage(request, sender, sendResponse) {
       reset_timer();
       setup();
       updateUI();
+      break;
     case "ping_presence":
+      slowify_timer = 0;
       setup();
       updateUI();
       break;
@@ -56,18 +59,18 @@ function setup() {
   create_html_elements();
 }
 
+function create_timer() {
+  if (!slowify_interval) {
+    slowify_interval = setInterval(onTimerEvent, TIMER_CALL_FREQUENCY_MS);
+  }
+}
+
 function onTimerEvent() {
   slowify_timer = slowify_timer - TIMER_CALL_FREQUENCY_MS;
   if (slowify_timer < 0) {
     ping_background_script();
   }
   updateUI();
-}
-
-function create_timer() {
-  if (!slowify_interval) {
-    slowify_interval = setInterval(onTimerEvent, TIMER_CALL_FREQUENCY_MS);
-  }
 }
 
 function ping_background_script() {
@@ -90,43 +93,47 @@ function create_html_elements() {
   position: fixed;
   top: 0;
   left: 0;
+  padding-top: 1vh;
   width: 100%;
   height: 100%;
   z-index: 1000;
-  color: white;
-  font-size: 10em;
-  padding-top: 100px;
   text-align: center;
-  background: ${slowify_background};
+  display: flex;
+  justify-content: center;
+  align-items: center;  background: ${slowify_background};
   `;
 
-  slowify_element_main_div.innerHTML = "wait<br>&nbsp";
   document.body.appendChild(slowify_element_main_div);
 
   slowify_progress_bar_div = document.createElement("div");
   slowify_progress_bar_div.style.cssText = `
-  background: red; 
-  width: 0%;
-  left: 10rem;
+  color: white;
+  font-size: 10vh;
+  background:linear-gradient(#e66465, #9198e5); 
+  width: 100%;
+  height: 50vh;
+  line-height: 50vh;
+  font-size: 10vh;
   border-radius: 50px;
   `;
 
-  slowify_progress_bar_div.innerHTML = " &nbsp ";
+  slowify_progress_bar_div.innerHTML = " - ";
   slowify_element_main_div.appendChild(slowify_progress_bar_div);
 }
 
 function updateUI() {
   if (slowify_timer <= 0) {
     slowify_element_main_div.style.visibility = "hidden";
-  } else {
-    slowify_element_main_div.style.visibility = "visible";
+    return;
   }
 
-  slowify_progress_bar_div.style.width =
-    Math.min(100 - (slowify_timer / slowify_setting_max_timer_ms) * 100, 100) +
-    "%";
+  slowify_element_main_div.style.visibility = "visible";
 
-  slowify_element_main_div.innerHTML =
-    "wait<br>" + Math.ceil(slowify_timer / 1000);
-  slowify_element_main_div.appendChild(slowify_progress_bar_div);
+  slowify_progress_bar_div.style.width =
+    Math.max(
+      10,
+      Math.min(90, (slowify_timer / slowify_setting_max_timer_ms) * 100)
+    ) + "%";
+
+  slowify_progress_bar_div.innerHTML = Math.ceil(slowify_timer / 1000);
 }

@@ -42,10 +42,15 @@ function setup_listeners() {
 }
 
 function handleTabUpdated(tabId, changeInfo, tabInfo) {
-  if (tabInfo.status === "complete") startProgressBar(tabId);
+  console.log("handleTabUpdated", tabId, changeInfo, tabInfo);
+  if (tabInfo.status === "complete")
+    setTimeout(function () {
+      startProgressBar(tabId);
+    }, 200);
 }
 
 function handleTabActivated(activeInfo) {
+  console.log("handleTabActivated", activeInfo);
   if (activeInfo.previousTabId) cancelTimer(activeInfo.previousTabId);
 
   isTabFocused = false;
@@ -63,6 +68,7 @@ function handleTabActivated(activeInfo) {
 }
 
 function handleWindowFocusChanged(windowId) {
+  console.log("handleWindowFocusChanged", windowId);
   if (!(windowId === -1)) {
     browser.windows.get(windowId).then(function (x) {
       function queryResult(tabs) {
@@ -90,6 +96,7 @@ function startProgressBar(tabId) {
   let show_distraction = timeSinceLastDistraction() > timeout_time_ms;
   let action = show_distraction ? "start_new_progress_bar" : "ping_presence";
   let data = { slowify_action: action };
+  console.log("startProgressBar", data);
   browser.tabs.sendMessage(tabId, data, function () {});
 }
 

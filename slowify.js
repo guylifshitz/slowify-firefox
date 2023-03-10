@@ -24,10 +24,7 @@ function handleError(error) {
 }
 
 chrome.runtime.onMessage.addListener(handleMessage);
-console.log("addListener");
-
 function handleMessage(request, sender, sendResponse) {
-  console.log("handleMessage", request);
   switch (request.slowify_action) {
     case "start_new_progress_bar":
       reset_timer();

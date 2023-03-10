@@ -24,7 +24,7 @@ function restoreOptions() {
   }
 
   function onError(error) {
-    console.log(`Error: ${error}`);
+    console.log(`Slowify-error: ${error}`);
   }
 
   browser.storage.sync.get("urls").then(setCurrentURLs, onError);

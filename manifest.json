@@ -1,12 +1,12 @@
 {
   "manifest_version": 2,
   "name": "Slowify - mindful browsing",
-  "version": "1.0",
+  "version": "1.0.1",
   "description": "Add a countdown timer before opening selected websites.",
   "icons": {
-    "48": "timer-icon.png"
+    "48": "timer-icon-x48.png"
   },
-  "permissions": ["storage",  "tabs"],
+  "permissions": ["storage", "tabs"],
   "background": {
     "scripts": ["background.js"],
     "persistent": false

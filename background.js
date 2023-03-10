@@ -42,7 +42,6 @@ function setup_listeners() {
 }
 
 function handleTabUpdated(tabId, changeInfo, tabInfo) {
-  console.log("handleTabUpdated", tabId, changeInfo, tabInfo);
   if (tabInfo.status === "complete")
     setTimeout(function () {
       startProgressBar(tabId);
@@ -50,7 +49,6 @@ function handleTabUpdated(tabId, changeInfo, tabInfo) {
 }
 
 function handleTabActivated(activeInfo) {
-  console.log("handleTabActivated", activeInfo);
   if (activeInfo.previousTabId) cancelTimer(activeInfo.previousTabId);
 
   isTabFocused = false;
@@ -68,7 +66,6 @@ function handleTabActivated(activeInfo) {
 }
 
 function handleWindowFocusChanged(windowId) {
-  console.log("handleWindowFocusChanged", windowId);
   if (!(windowId === -1)) {
     browser.windows.get(windowId).then(function (x) {
       function queryResult(tabs) {
@@ -96,7 +93,6 @@ function startProgressBar(tabId) {
   let show_distraction = timeSinceLastDistraction() > timeout_time_ms;
   let action = show_distraction ? "start_new_progress_bar" : "ping_presence";
   let data = { slowify_action: action };
-  console.log("startProgressBar", data);
   browser.tabs.sendMessage(tabId, data, function () {});
 }
 
@@ -108,10 +104,3 @@ function cancelTimer(tabId) {
   let data = { slowify_action: "destroy_timer" };
   browser.tabs.sendMessage(tabId, data, function () {});
 }
-
-setInterval(function () {
-  console.log(
-    "Slowify time since last distraction: ",
-    (timeSinceLastDistraction() / 1000).toFixed()
-  );
-}, 1000);
